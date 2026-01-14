@@ -1,0 +1,12 @@
+# Copiar este archivo a terraform.tfvars y ajustar valores
+
+aws_region   = "eu-west-1"
+environment  = "dev"
+project_name = "fastapi-cognito"
+
+# Política de contraseñas
+password_minimum_length    = 8
+password_require_lowercase = true
+password_require_uppercase = true
+password_require_numbers   = true
+password_require_symbols   = false

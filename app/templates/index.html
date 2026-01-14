@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ app_name }} - Login</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Login Container -->
+    <div class="container" id="login-container">
+      <div class="form-box login">
+        <form id="login-form">
+          <h1>Acceso</h1>
+          <div class="input-box">
+            <input type="email" id="login-email" placeholder="Correo electrónico" required />
+            <i class="bx bxs-envelope"></i>
+          </div>
+          <div class="input-box">
+            <input type="password" id="login-password" placeholder="Contraseña" required />
+            <i class="bx bxs-lock-alt"></i>
+          </div>
+          <div class="forgot-link">
+            <a href="#" id="show-forgot">¿Has olvidado la contraseña?</a>
+          </div>
+          <button type="submit" class="btn">Acceder</button>
+          <div id="login-error" class="error-message"></div>
+        </form>
+      </div>
+
+      <div class="form-box forgot">
+        <form id="forgot-form">
+          <h1>Recuperar</h1>
+          <p>Introduce tu email para recibir un código de verificación</p>
+          <div class="input-box">
+            <input type="email" id="forgot-email" placeholder="Correo electrónico" required />
+            <i class="bx bxs-envelope"></i>
+          </div>
+          <button type="submit" class="btn">Enviar código</button>
+          <div class="forgot-link">
+            <a href="#" id="show-login">Volver al login</a>
+          </div>
+          <div id="forgot-error" class="error-message"></div>
+        </form>
+      </div>
+
+      <div class="form-box reset">
+        <form id="reset-form">
+          <h1>Nueva contraseña</h1>
+          <div class="input-box">
+            <input type="text" id="reset-code" placeholder="Código de verificación" required />
+            <i class="bx bxs-key"></i>
+          </div>
+          <div class="input-box">
+            <input type="password" id="reset-password" placeholder="Nueva contraseña" required />
+            <i class="bx bxs-lock-alt"></i>
+          </div>
+          <div class="input-box">
+            <input type="password" id="reset-confirm" placeholder="Confirmar contraseña" required />
+            <i class="bx bxs-lock"></i>
+          </div>
+          <button type="submit" class="btn">Cambiar contraseña</button>
+          <div id="reset-error" class="error-message"></div>
+        </form>
+      </div>
+
+      <div class="form-box new-password">
+        <form id="new-password-form">
+          <h1>Crear contraseña</h1>
+          <p>Tu cuenta requiere que establezcas una nueva contraseña</p>
+          <div class="input-box">
+            <input type="password" id="new-password" placeholder="Nueva contraseña" required />
+            <i class="bx bxs-lock-alt"></i>
+          </div>
+          <div class="input-box">
+            <input type="password" id="new-password-confirm" placeholder="Confirmar contraseña" required />
+            <i class="bx bxs-lock"></i>
+          </div>
+          <button type="submit" class="btn">Establecer contraseña</button>
+          <div id="new-password-error" class="error-message"></div>
+        </form>
+      </div>
+
+      <div class="toggle-box">
+        <div class="toggle-panel toggle-left">
+          <h1>{{ app_name }}</h1>
+          <p>{{ app_description }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Container (after login) -->
+    <div class="dashboard-container" id="dashboard-container" style="display: none;">
+      <div class="dashboard">
+        <h1>Bienvenido</h1>
+        <div id="user-info">
+          <p><strong>Email:</strong> <span id="user-email"></span></p>
+          <p><strong>ID:</strong> <span id="user-sub"></span></p>
+        </div>
+        <button class="btn" id="logout-btn">Cerrar sesión</button>
+        <button class="btn secondary" id="test-api-btn">Probar API /users/me</button>
+        <div id="api-response" class="api-response"></div>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
