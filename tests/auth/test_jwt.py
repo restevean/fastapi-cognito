@@ -1,6 +1,6 @@
 """Tests for JWT validation — app/auth/jwt.py.
 
-Uses RSA key generation and python-jose to create real (but test) JWTs.
+Uses RSA key generation and PyJWT to create real (but test) JWTs.
 Patches httpx.get to return mock JWKS.
 """
 
@@ -10,11 +10,11 @@ import time
 from typing import Any, Generator
 from unittest.mock import MagicMock, patch
 
+import jwt as pyjwt
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
-from jose import jwt as jose_jwt
 
 from app.auth import jwt as jwt_module
 from app.auth.jwt import _get_signing_key, _jwks_cache
@@ -61,7 +61,7 @@ def _generate_rsa_keypair() -> tuple[rsa.RSAPrivateKey, dict[str, Any]]:
 
 _PRIVATE_KEY, _TEST_JWK = _generate_rsa_keypair()
 
-# PEM for python-jose to sign tokens
+# PEM for PyJWT to sign tokens
 _PRIVATE_KEY_PEM = _PRIVATE_KEY.private_bytes(
     encoding=serialization.Encoding.PEM,
     format=serialization.PrivateFormat.TraditionalOpenSSL,
@@ -116,7 +116,7 @@ def _create_token(
     if claims:
         default_claims.update(claims)
 
-    return jose_jwt.encode(
+    return pyjwt.encode(
         default_claims,
         _PRIVATE_KEY_PEM,
         algorithm="RS256",
@@ -350,7 +350,7 @@ class TestTokenValidation:
         )
 
         now = int(time.time())
-        token = jose_jwt.encode(
+        token = pyjwt.encode(
             {
                 "sub": "test-user-id",
                 "email": "test@example.com",

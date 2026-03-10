@@ -6,10 +6,11 @@ import time
 from typing import Annotated
 
 import httpx
+import jwt as pyjwt
 from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
-from jose.exceptions import ExpiredSignatureError
+from jwt.algorithms import RSAAlgorithm
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 
 from app.shared.config import Settings, get_settings
 
@@ -67,8 +68,8 @@ def _get_signing_key(token: str, jwks: list[dict]) -> dict | None:
         The matching JWK or None if not found.
     """
     try:
-        unverified_header = jwt.get_unverified_header(token)
-    except JWTError:
+        unverified_header = pyjwt.get_unverified_header(token)
+    except InvalidTokenError:
         return None
 
     kid = unverified_header.get("kid")
@@ -110,17 +111,13 @@ def _decode_and_validate_token(token: str, settings: Settings) -> dict:
         )
 
     try:
-        claims = jwt.decode(
+        public_key = RSAAlgorithm.from_jwk(signing_key)
+        claims = pyjwt.decode(
             token,
-            signing_key,
+            public_key,
             algorithms=["RS256"],
             audience=settings.cognito_client_id,
             issuer=settings.cognito_issuer,
-            options={
-                "verify_aud": True,
-                "verify_iss": True,
-                "verify_exp": True,
-            },
         )
         return claims
     except ExpiredSignatureError as exc:
@@ -128,7 +125,7 @@ def _decode_and_validate_token(token: str, settings: Settings) -> dict:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
         ) from exc
-    except JWTError as exc:
+    except InvalidTokenError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid token: {exc}",
