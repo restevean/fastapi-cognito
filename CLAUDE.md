@@ -29,8 +29,11 @@ uv run pytest --cov=app --cov-report=term-missing
 # Run a single test file
 uv run pytest tests/test_health.py
 
+# Run a test class
+uv run pytest tests/auth/test_jwt.py::TestTokenValidation
+
 # Run a single test function
-uv run pytest tests/test_health.py::test_health_check_returns_healthy
+uv run pytest tests/test_health.py::TestHealthEndpoint::test_health_returns_healthy_status
 
 # Linting
 uv run ruff check .
@@ -41,20 +44,28 @@ uv run ruff format .
 
 ## Project Structure
 
+Screaming architecture with pragmatic hexagonal auth domain:
+
 ```
 fastapi_cognito/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py              # FastAPI entry point, Jinja2 templates
-│   ├── config.py            # Settings from environment variables
-│   ├── api/
+│   ├── health.py            # Public endpoint: GET /health
+│   ├── auth/                # Auth domain (hexagonal)
 │   │   ├── __init__.py
-│   │   ├── auth.py          # Auth endpoints: login, logout, password reset
-│   │   ├── health.py        # Public endpoint: GET /health
-│   │   └── users.py         # Private endpoint: GET /users/me
-│   ├── core/
+│   │   ├── router.py        # Auth endpoints: login, logout, password reset
+│   │   ├── schemas.py       # Pydantic request/response models
+│   │   ├── service.py       # Auth use cases (application layer)
+│   │   ├── provider.py      # AuthProvider protocol (port)
+│   │   ├── cognito.py       # AWS Cognito adapter (implements AuthProvider)
+│   │   └── jwt.py           # JWT validation with Cognito JWKS
+│   ├── user/                # User domain
 │   │   ├── __init__.py
-│   │   └── auth.py          # JWT validation with Cognito JWKS
+│   │   └── router.py        # Private endpoint: GET /users/me
+│   ├── shared/              # Cross-cutting concerns
+│   │   ├── __init__.py
+│   │   └── config.py        # Settings from environment variables
 │   ├── static/
 │   │   ├── app.js           # Frontend logic (fetch calls to /auth endpoints)
 │   │   └── style.css        # Styles
@@ -68,10 +79,17 @@ fastapi_cognito/
 │   └── terraform.tfvars.example
 ├── tests/
 │   ├── __init__.py
-│   ├── conftest.py          # Pytest fixtures with auth mock
-│   ├── test_auth.py         # Auth endpoint tests
+│   ├── conftest.py          # Shared fixtures (TestClient)
 │   ├── test_health.py       # Health endpoint tests
-│   └── test_users.py        # User endpoint tests
+│   ├── auth/                # Auth domain tests
+│   │   ├── __init__.py
+│   │   ├── conftest.py      # Auth fixtures (FakeAuthProvider, RSA keys)
+│   │   ├── test_router.py   # Auth endpoint integration tests
+│   │   ├── test_service.py  # Auth service unit tests
+│   │   └── test_jwt.py      # JWT validation unit tests
+│   └── user/                # User domain tests
+│       ├── __init__.py
+│       └── test_router.py   # User endpoint tests
 ├── .env                     # Local configuration (not in git)
 ├── .env.example             # Example configuration
 └── pyproject.toml
@@ -120,7 +138,7 @@ Note: ROPC allows custom UI but credentials pass through the backend. For third-
 
 ## Key Implementation Details
 
-### JWT Validation (app/core/auth.py)
+### JWT Validation (app/auth/jwt.py)
 - Fetches and caches JWKS from Cognito (1 hour TTL)
 - Validates token signature, audience, issuer, and expiration
 - Falls back to mock mode if Cognito not configured (development only)
@@ -145,6 +163,8 @@ app.dependency_overrides[get_current_user] = lambda: {
     "token_use": "id",
 }
 ```
+
+Auth domain tests use `FakeAuthProvider` (structural subtyping via `AuthProvider` Protocol) and real RSA-signed JWTs for `jwt.py` testing — no boto3 patching needed.
 
 ## Terraform Workflow
 

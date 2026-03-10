@@ -1,5 +1,7 @@
 """Application configuration using pydantic-settings."""
 
+from __future__ import annotations
+
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,6 +25,9 @@ class Settings(BaseSettings):
     cognito_user_pool_id: str = ""
     cognito_client_id: str = ""
     aws_region: str = "eu-west-1"
+
+    # Cookie security
+    cookie_secure: bool = True
 
     @property
     def cognito_issuer(self) -> str:

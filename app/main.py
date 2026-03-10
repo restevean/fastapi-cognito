@@ -7,8 +7,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.api import auth, health, users
-from app.config import get_settings
+from app.auth.router import router as auth_router
+from app.health import router as health_router
+from app.shared.config import get_settings
+from app.user.router import router as user_router
 
 settings = get_settings()
 
@@ -19,9 +21,9 @@ app = FastAPI(
 )
 
 # API routers
-app.include_router(health.router)
-app.include_router(users.router)
-app.include_router(auth.router)
+app.include_router(health_router)
+app.include_router(user_router)
+app.include_router(auth_router)
 
 # Static files (frontend assets)
 static_dir = Path(__file__).parent / "static"

@@ -1,4 +1,6 @@
-"""Tests for user endpoints."""
+"""Tests for user router endpoints."""
+
+from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
@@ -13,9 +15,7 @@ class TestUsersEndpoints:
         assert response.status_code == 401
         assert response.json() == {"detail": "No se proporcionó token de autenticación"}
 
-    def test_get_me_with_valid_token_returns_user_profile(
-        self, client: TestClient
-    ) -> None:
+    def test_get_me_with_valid_token_returns_user_profile(self, client: TestClient) -> None:
         """GET /users/me with valid token should return user profile."""
         response = client.get(
             "/users/me",

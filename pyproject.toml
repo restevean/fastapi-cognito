@@ -14,16 +14,11 @@ dependencies = [
     "email-validator>=2.0.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "httpx>=0.28.0",
     "pytest>=8.0.0",
     "pytest-cov>=6.0.0",
     "ruff>=0.8.0",
-]
-
-[dependency-groups]
-dev = [
     "pip>=25.0",
 ]
 

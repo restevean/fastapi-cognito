@@ -3,8 +3,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.config import Settings, get_settings
 from app.main import app
+from app.shared.config import Settings, get_settings
 
 
 def get_test_settings() -> Settings:

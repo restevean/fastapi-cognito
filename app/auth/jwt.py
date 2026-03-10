@@ -1,4 +1,6 @@
-"""Authentication module with AWS Cognito JWT validation."""
+"""JWT validation with AWS Cognito JWKS."""
+
+from __future__ import annotations
 
 import time
 from typing import Annotated
@@ -9,18 +11,17 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError
 
-from app.config import Settings, get_settings
+from app.shared.config import Settings, get_settings
 
 security = HTTPBearer(auto_error=False)
 
 # Cache for JWKS to avoid fetching on every request
-_jwks_cache: dict = {"keys": [], "fetched_at": 0}
+_jwks_cache: dict[str, list[dict] | float] = {"keys": [], "fetched_at": 0}
 JWKS_CACHE_TTL = 3600  # 1 hour
 
 
 def _get_jwks(settings: Settings) -> list[dict]:
-    """
-    Fetch and cache JWKS from Cognito.
+    """Fetch and cache JWKS from Cognito.
 
     Args:
         settings: Application settings with Cognito configuration.
@@ -33,9 +34,12 @@ def _get_jwks(settings: Settings) -> list[dict]:
     """
     current_time = time.time()
 
+    keys = _jwks_cache["keys"]
+    fetched_at = _jwks_cache["fetched_at"]
+
     # Return cached keys if still valid
-    if _jwks_cache["keys"] and (current_time - _jwks_cache["fetched_at"]) < JWKS_CACHE_TTL:
-        return _jwks_cache["keys"]
+    if keys and (current_time - fetched_at) < JWKS_CACHE_TTL:  # type: ignore[operator]
+        return keys  # type: ignore[return-value]
 
     # Fetch fresh JWKS
     try:
@@ -44,17 +48,16 @@ def _get_jwks(settings: Settings) -> list[dict]:
         jwks = response.json()
         _jwks_cache["keys"] = jwks.get("keys", [])
         _jwks_cache["fetched_at"] = current_time
-        return _jwks_cache["keys"]
-    except httpx.HTTPError as e:
+        return _jwks_cache["keys"]  # type: ignore[return-value]
+    except httpx.HTTPError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Could not fetch JWKS: {e}",
-        ) from e
+            detail=f"Could not fetch JWKS: {exc}",
+        ) from exc
 
 
 def _get_signing_key(token: str, jwks: list[dict]) -> dict | None:
-    """
-    Find the signing key for a token from JWKS.
+    """Find the signing key for a token from JWKS.
 
     Args:
         token: The JWT token.
@@ -76,8 +79,7 @@ def _get_signing_key(token: str, jwks: list[dict]) -> dict | None:
 
 
 def _decode_and_validate_token(token: str, settings: Settings) -> dict:
-    """
-    Decode and validate a Cognito JWT token.
+    """Decode and validate a Cognito JWT token.
 
     Args:
         token: The JWT token to validate.
@@ -121,16 +123,16 @@ def _decode_and_validate_token(token: str, settings: Settings) -> dict:
             },
         )
         return claims
-    except ExpiredSignatureError as e:
+    except ExpiredSignatureError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
-        ) from e
-    except JWTError as e:
+        ) from exc
+    except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {e}",
-        ) from e
+            detail=f"Invalid token: {exc}",
+        ) from exc
 
 
 def get_current_user(
@@ -138,8 +140,7 @@ def get_current_user(
     settings: Annotated[Settings, Depends(get_settings)],
     access_token: Annotated[str | None, Cookie()] = None,
 ) -> dict:
-    """
-    Validate the bearer token and return the current user.
+    """Validate the bearer token and return the current user.
 
     Accepts token from either Authorization header or HttpOnly cookie.
 
